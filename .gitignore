@@ -1,0 +1,14 @@
+# Node dependencies
+node_modules/
+
+# Build outputs
+**/dist/
+
+# Environment files
+.env
+.env.*
+
+# Logs and debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
