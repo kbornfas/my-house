@@ -13,7 +13,7 @@ class MyHouseTestCase(unittest.TestCase):
     def setUp(self):
         """Set up test client and database"""
         app.config['TESTING'] = True
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
         self.app = app.test_client()
         
         with app.app_context():

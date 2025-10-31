@@ -5,7 +5,7 @@ Handles connectivity and data exchange with smart kitchen appliances like fridge
 
 import paho.mqtt.client as mqtt
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class SmartApplianceManager:
     """Manager for smart appliance connections"""
@@ -115,23 +115,26 @@ class SmartApplianceManager:
         # For now, return a mock inventory for demonstration
         # This would integrate with actual smart fridge APIs (Samsung SmartThings, LG ThinQ, etc.)
         
+        # Generate dynamic expiry dates relative to current date
+        now = datetime.now()
+        
         mock_inventory = [
             {
                 'name': 'Milk',
                 'quantity': 2,
-                'expiry_date': '2025-11-05',
+                'expiry_date': (now + timedelta(days=5)).strftime('%Y-%m-%d'),
                 'location': 'main_shelf'
             },
             {
                 'name': 'Eggs',
                 'quantity': 12,
-                'expiry_date': '2025-11-10',
+                'expiry_date': (now + timedelta(days=10)).strftime('%Y-%m-%d'),
                 'location': 'door'
             },
             {
                 'name': 'Butter',
                 'quantity': 1,
-                'expiry_date': '2025-11-15',
+                'expiry_date': (now + timedelta(days=15)).strftime('%Y-%m-%d'),
                 'location': 'main_shelf'
             }
         ]

@@ -74,7 +74,7 @@ def upcoming_bills():
     cutoff_date = datetime.now() + timedelta(days=days)
     bills = Bill.query.filter(
         Bill.due_date <= cutoff_date,
-        Bill.paid == False
+        Bill.paid.is_(False)
     ).all()
     return jsonify([bill.to_dict() for bill in bills])
 
@@ -258,4 +258,7 @@ def health():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    debug = os.getenv('DEBUG', 'False').lower() == 'true'
+    host = os.getenv('FLASK_HOST', '0.0.0.0')
+    port = int(os.getenv('FLASK_PORT', 5000))
+    app.run(debug=debug, host=host, port=port)
