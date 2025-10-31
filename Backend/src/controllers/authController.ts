@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { createRefreshToken } from './refreshController';
@@ -35,5 +35,9 @@ export async function login(req: Request, res: Response) {
 
   const accessToken = jwt.sign({ sub: user.id }, process.env.JWT_PRIVATE_KEY || 'dev', { algorithm: 'HS256', expiresIn: '15m' });
   const refreshToken = await createRefreshToken(user.id);
-  return res.json({ accessToken, refreshToken });
+  return res.json({
+    user: { id: user.id, email: user.email, fullName: user.fullName },
+    accessToken,
+    refreshToken,
+  });
 }

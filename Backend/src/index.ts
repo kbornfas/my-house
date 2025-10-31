@@ -3,6 +3,8 @@ dotenv.config();
 
 import app from './app';
 // Start background workers/schedulers in dev (these will run in the same process for the scaffold)
+import './worker/calendarSyncWorker';
+import './worker/mealPlanPrefetchWorker';
 import './worker/notificationWorker';
 import './worker/reminderScheduler';
 

@@ -4,9 +4,12 @@ import helmet from 'helmet';
 
 import { NextFunction, Request, Response } from 'express';
 import { health } from './controllers/healthController';
+import { authenticate } from './middleware/authenticate';
 import authRoutes from './routes/auth';
 import billsRoutes from './routes/bills';
+import calendarRoutes from './routes/calendar';
 import devicesRoutes from './routes/devices';
+import mealPlansRoutes from './routes/mealPlans';
 import refreshRoutes from './routes/refresh';
 import remindersRoutes from './routes/reminders';
 
@@ -24,11 +27,13 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 });
 
 app.use('/api/auth', authRoutes);
-app.use('/api/bills', billsRoutes);
 app.use('/api/auth/refresh', refreshRoutes);
-app.use('/api/devices', devicesRoutes);
+app.use('/api/bills', authenticate, billsRoutes);
+app.use('/api/devices', authenticate, devicesRoutes);
+app.use('/api/calendar', authenticate, calendarRoutes);
 app.get('/health', health);
-app.use('/api/reminders', remindersRoutes);
+app.use('/api/reminders', authenticate, remindersRoutes);
+app.use('/api/meal-plans', authenticate, mealPlansRoutes);
 
 import { errorHandler } from './middleware/errorHandler';
 app.use(errorHandler);

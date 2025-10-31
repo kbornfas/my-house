@@ -4,7 +4,8 @@ import { Request, Response } from 'express';
 const prisma = new PrismaClient();
 
 export async function registerDevice(req: Request, res: Response) {
-  const { userId, fcmToken, platform } = req.body;
+  const userId = req.userId || req.body.userId;
+  const { fcmToken, platform } = req.body;
   if (!userId || !fcmToken) return res.status(400).json({ error: 'userId and fcmToken required' });
 
   const device = await prisma.device.upsert({
@@ -17,7 +18,7 @@ export async function registerDevice(req: Request, res: Response) {
 }
 
 export async function listDevices(req: Request, res: Response) {
-  const { userId } = req.query as any;
+  const userId = req.userId || (req.query as any)?.userId;
   if (!userId) return res.status(400).json({ error: 'userId required' });
   const devices = await prisma.device.findMany({ where: { userId } });
   return res.json({ data: devices });

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { api, formatCurrency, formatDate } from '../lib/api';
+import { useAuth } from '../lib/auth';
 
 type Bill = {
   id: string;
@@ -78,6 +79,9 @@ function getStatusClass(status: string) {
 }
 
 export default function Bills() {
+  const { user } = useAuth();
+  const isAuthenticated = Boolean(user);
+
   const { data, isLoading, isError } = useQuery<BillResponse>({
     queryKey: ['bills'],
     queryFn: async () => {
@@ -85,11 +89,14 @@ export default function Bills() {
       return response.data;
     },
     staleTime: 60_000,
+    enabled: isAuthenticated,
+    retry: isAuthenticated ? 2 : false,
   });
 
-  const bills = data?.data ?? [];
+  const bills = isAuthenticated ? data?.data ?? [] : [];
   const hasRealBills = bills.length > 0;
-  const displayBills = hasRealBills ? bills : SAMPLE_BILLS;
+  const usingSampleData = !isAuthenticated || !hasRealBills;
+  const displayBills = usingSampleData ? SAMPLE_BILLS : bills;
 
   const sortedBills = useMemo(
     () =>
@@ -235,11 +242,13 @@ export default function Bills() {
         </div>
       </section>
 
-      {!hasRealBills && (
+      {usingSampleData && (
         <section className="announcement">
-          <strong>Previewing sample billing data</strong>
+          <strong>{isAuthenticated ? 'Previewing sample billing data' : 'Sign in to load household bills'}</strong>
           <p className="supporting-text">
-            Connect your backend API to replace these reference figures with live household statements. The interface is ready for complete CRUD flows.
+            {isAuthenticated
+              ? 'Connect your backend API to replace these reference figures with live household statements. The interface is ready for complete CRUD flows.'
+              : 'Use your Personal Fortress account to retrieve live statements. Once signed in, refreshed data appears instantly across the dashboard.'}
           </p>
         </section>
       )}
@@ -346,8 +355,8 @@ export default function Bills() {
           <button type="button" className="ghost-button">Filter view</button>
         </div>
 
-        {isLoading && <div className="alert">Loading bills from your vault…</div>}
-        {isError && (
+        {isAuthenticated && isLoading && <div className="alert">Loading bills from your vault…</div>}
+        {isAuthenticated && isError && (
           <div className="alert alert--error">
             We couldn&apos;t reach the server. This table shows the latest cached information.
           </div>

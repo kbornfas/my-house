@@ -20,6 +20,10 @@ model User {
   notificationLogs          NotificationLog[]
   bills                     Bill[]
   reminders                 Reminder[]
+  calendarAccounts          CalendarAccount[]
+  calendarEvents            CalendarEvent[]
+  mealOverrides             UserMealOverride[]
+  preferences               UserPreferences?
   createdAt                 DateTime  @default(now())
   updatedAt                 DateTime  @updatedAt
 }
@@ -129,4 +133,108 @@ model NotificationLog {
   platform    String?
   attemptCount Int     @default(0)
   lastError   String?
+}
+
+model CalendarAccount {
+  id              String           @id @default(uuid())
+  user            User             @relation(fields: [userId], references: [id])
+  userId          String
+  provider        String
+  externalId      String
+  email           String?
+  label           String?
+  accessTokenEnc  String          @db.Text
+  refreshTokenEnc String?         @db.Text
+  expiresAt       DateTime?
+  lastSyncedAt    DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  events          CalendarEvent[]
+
+  @@unique([provider, externalId])
+}
+
+model CalendarEvent {
+  id          String            @id @default(uuid())
+  account     CalendarAccount?  @relation(fields: [accountId], references: [id])
+  accountId   String?
+  user        User              @relation(fields: [userId], references: [id])
+  userId      String
+  externalId  String?
+  summary     String?
+  description String?
+  startsAt    DateTime
+  endsAt      DateTime
+  location    String?
+  source      String?
+  isHoliday   Boolean           @default(false)
+  isMeal      Boolean           @default(false)
+  metadata    Json?
+  holiday     Holiday?          @relation(fields: [holidayId], references: [id])
+  holidayId   String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([userId, startsAt])
+  @@unique([accountId, externalId])
+}
+
+model Holiday {
+  id          String              @id @default(uuid())
+  countryCode String
+  name        String
+  date        DateTime
+  type        String?
+  rawPayload  Json?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  events      CalendarEvent[]
+  mealPlans   UserMealOverride[]
+
+  @@unique([countryCode, date, name])
+  @@index([date])
+}
+
+model MealPlanTemplate {
+  id         String   @id @default(uuid())
+  dateKey    String
+  type       String   @default("standard")
+  calories   Int?
+  macros     Json?
+  courses    Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([dateKey, type])
+}
+
+model UserMealOverride {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  dateKey    String
+  holiday    Holiday? @relation(fields: [holidayId], references: [id])
+  holidayId  String?
+  courses    Json
+  calories   Int?
+  macros     Json?
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, dateKey, holidayId])
+  @@index([userId, dateKey])
+}
+
+model UserPreferences {
+  id                   String  @id @default(uuid())
+  user                 User    @relation(fields: [userId], references: [id])
+  userId               String  @unique
+  timezone             String  @default("UTC")
+  locale               String  @default("en-US")
+  dietaryRestrictions  Json?
+  caloricGoal          Int?
+  macros               Json?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }

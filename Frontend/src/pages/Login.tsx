@@ -1,7 +1,8 @@
+import { AxiosError } from 'axios';
 import { useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
-import { api } from '../lib/api';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../lib/auth';
 
 type LoginForm = {
   email: string;
@@ -9,6 +10,8 @@ type LoginForm = {
 };
 
 export default function Login() {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const {
     register,
     handleSubmit,
@@ -25,12 +28,15 @@ export default function Login() {
   const onSubmit: SubmitHandler<LoginForm> = async (values) => {
     setFeedback(null);
     try {
-      const response = await api.post('/auth/login', values);
-      const preview = response.data?.accessToken?.slice(0, 12) ?? 'token';
-      setFeedback({ message: `Welcome back! Token preview: ${preview}…`, type: 'success' });
+      const user = await login(values);
+      const greeting = user.fullName ? `Welcome back, ${user.fullName}!` : 'Welcome back!';
+      setFeedback({ message: `${greeting} Redirecting…`, type: 'success' });
       reset({ email: values.email, password: '' });
-    } catch (error: any) {
-      const message = error?.response?.data?.error ?? 'Unable to log in right now. Please try again.';
+      setTimeout(() => navigate('/', { replace: true }), 600);
+    } catch (error) {
+      const message = error instanceof AxiosError
+        ? error.response?.data?.error ?? 'Unable to log in right now. Please try again.'
+        : 'Unable to log in right now. Please try again.';
       setFeedback({ message, type: 'error' });
     }
   };

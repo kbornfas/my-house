@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { api, formatDate } from '../lib/api';
+import { useAuth } from '../lib/auth';
 
 type Reminder = {
   id: string;
@@ -62,6 +63,9 @@ const SAMPLE_REMINDERS: Reminder[] = [
 ];
 
 export default function Reminders() {
+  const { user } = useAuth();
+  const isAuthenticated = Boolean(user);
+
   const { data, isLoading, isError } = useQuery<ReminderResponse>({
     queryKey: ['reminders'],
     queryFn: async () => {
@@ -69,11 +73,14 @@ export default function Reminders() {
       return response.data;
     },
     staleTime: 60_000,
+    enabled: isAuthenticated,
+    retry: isAuthenticated ? 2 : false,
   });
 
-  const reminders = data?.data ?? [];
+  const reminders = isAuthenticated ? data?.data ?? [] : [];
   const hasRealReminders = reminders.length > 0;
-  const displayReminders = hasRealReminders ? reminders : SAMPLE_REMINDERS;
+  const usingSampleData = !isAuthenticated || !hasRealReminders;
+  const displayReminders = usingSampleData ? SAMPLE_REMINDERS : reminders;
 
   const grouped = useMemo(() => {
     const upcoming = displayReminders
@@ -160,11 +167,13 @@ export default function Reminders() {
         </div>
       </section>
 
-      {!hasRealReminders && (
+      {usingSampleData && (
         <section className="announcement">
-          <strong>Showing demo reminders</strong>
+          <strong>{isAuthenticated ? 'Showing demo reminders' : 'Sign in to review your reminders'}</strong>
           <p className="supporting-text">
-            Connect Firebase Cloud Messaging or seed Prisma data to populate this experience with live reminders per user.
+            {isAuthenticated
+              ? 'Connect Firebase Cloud Messaging or seed Prisma data to populate this experience with live reminders per user.'
+              : 'Log in to Personal Fortress so your scheduled reminders appear in this timeline. Everything refreshes automatically after authentication.'}
           </p>
         </section>
       )}
@@ -211,8 +220,8 @@ export default function Reminders() {
           <span className="status-pill status-pill--neutral">{grouped.upcoming.length} scheduled</span>
         </div>
 
-        {isLoading && <div className="alert">Loading reminders…</div>}
-        {isError && (
+        {isAuthenticated && isLoading && <div className="alert">Loading reminders…</div>}
+        {isAuthenticated && isError && (
           <div className="alert alert--error">
             Could not load reminders from the server. Showing the latest cached view instead.
           </div>

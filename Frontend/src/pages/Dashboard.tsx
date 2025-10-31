@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { api, formatCurrency, formatDate } from '../lib/api';
+import { useAuth } from '../lib/auth';
 
 type Bill = {
   id: string;
@@ -102,6 +103,9 @@ const SAMPLE_REMINDERS: Reminder[] = [
 ];
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  const isAuthenticated = Boolean(user);
+
   const { data: billsData, isLoading: billsLoading, isError: billsError } = useQuery<BillResponse>({
     queryKey: ['dashboard', 'bills'],
     queryFn: async () => {
@@ -109,6 +113,8 @@ export default function Dashboard() {
       return response.data;
     },
     staleTime: 60_000,
+    enabled: isAuthenticated,
+    retry: isAuthenticated ? 2 : false,
   });
 
   const { data: remindersData, isLoading: remindersLoading, isError: remindersError } = useQuery<ReminderResponse>({
@@ -118,15 +124,17 @@ export default function Dashboard() {
       return response.data;
     },
     staleTime: 60_000,
+    enabled: isAuthenticated,
+    retry: isAuthenticated ? 2 : false,
   });
 
-  const bills = billsData?.data ?? [];
-  const reminders = remindersData?.data ?? [];
+  const bills = isAuthenticated ? billsData?.data ?? [] : [];
+  const reminders = isAuthenticated ? remindersData?.data ?? [] : [];
 
   const hasRealBills = bills.length > 0;
   const hasRealReminders = reminders.length > 0;
-  const displayBills = hasRealBills ? bills : SAMPLE_BILLS;
-  const displayReminders = hasRealReminders ? reminders : SAMPLE_REMINDERS;
+  const displayBills = !isAuthenticated || !hasRealBills ? SAMPLE_BILLS : bills;
+  const displayReminders = !isAuthenticated || !hasRealReminders ? SAMPLE_REMINDERS : reminders;
 
   const summaries = useMemo(() => {
     const outstanding = displayBills.reduce((total, bill) => {
@@ -287,7 +295,7 @@ export default function Dashboard() {
     }));
   }, [displayBills]);
 
-  const showSampleAnnouncement = !hasRealBills || !hasRealReminders;
+  const showSampleAnnouncement = !isAuthenticated || !hasRealBills || !hasRealReminders;
 
   return (
     <div className="page">
@@ -307,9 +315,11 @@ export default function Dashboard() {
 
       {showSampleAnnouncement && (
         <section className="announcement">
-          <strong>Demo mode activated</strong>
+          <strong>{isAuthenticated ? 'Demo mode activated' : 'Sign in to unlock live metrics'}</strong>
           <p className="supporting-text">
-            Connect your API or seed sample data to replace the illustrative household metrics shown below. Everything updates in real time once your services are live.
+            {isAuthenticated
+              ? 'Connect your API or seed sample data to replace the illustrative household metrics shown below. Everything updates in real time once your services are live.'
+              : 'Log in with your Personal Fortress credentials to stream bills, reminders, and meal plans into this dashboard. Once authenticated, the figures below refresh automatically.'}
           </p>
           <div className="legend">
             <span className="legend__item">
@@ -407,8 +417,8 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        {billsLoading && <div className="alert">Fetching your latest bill activity…</div>}
-        {billsError && (
+        {isAuthenticated && billsLoading && <div className="alert">Fetching your latest bill activity…</div>}
+        {isAuthenticated && billsError && (
           <div className="alert alert--error">
             Could not reach the server right now. Showing the last known data.
           </div>

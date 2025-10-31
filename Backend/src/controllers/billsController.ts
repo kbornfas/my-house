@@ -3,13 +3,20 @@ import { Request, Response } from 'express';
 
 const prisma = new PrismaClient();
 
-export async function listBills(_req: Request, res: Response) {
-  const bills = await prisma.bill.findMany({ take: 100, orderBy: { dueDate: 'asc' } });
+export async function listBills(req: Request, res: Response) {
+  const userId = req.userId || (typeof req.query.userId === 'string' ? req.query.userId : undefined);
+  const where = userId ? { userId } : undefined;
+  const bills = await prisma.bill.findMany({
+    where,
+    take: 100,
+    orderBy: { dueDate: 'asc' },
+  });
   return res.json({ data: bills });
 }
 
 export async function createBill(req: Request, res: Response) {
-  const { userId, name, amount, dueDate, color, category, recurrence, status, paymentMethod, notes, autoPay } = req.body;
+  const userId = req.userId || req.body.userId;
+  const { name, amount, dueDate, color, category, recurrence, status, paymentMethod, notes, autoPay } = req.body;
   if (!userId || !name || !amount || !dueDate) return res.status(400).json({ error: 'userId, name, amount and dueDate required' });
 
   const numericAmount = typeof amount === 'string' ? Number.parseFloat(amount) : Number(amount);
