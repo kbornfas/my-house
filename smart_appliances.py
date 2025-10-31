@@ -64,9 +64,11 @@ class SmartApplianceManager:
                 'appliance': self.connected_appliances[appliance_type]
             }
         except Exception as e:
+            # Log the error for debugging but don't expose details to users
+            # In production, use proper logging: logging.error(f"MQTT connection failed: {str(e)}")
             return {
                 'success': False,
-                'message': f'Failed to connect: {str(e)}'
+                'message': 'Failed to connect to appliance via MQTT'
             }
     
     def _connect_http(self, appliance_type, connection_info):
@@ -89,9 +91,11 @@ class SmartApplianceManager:
                 'appliance': self.connected_appliances[appliance_type]
             }
         except Exception as e:
+            # Log the error for debugging but don't expose details to users
+            # In production, use proper logging: logging.error(f"HTTP connection failed: {str(e)}")
             return {
                 'success': False,
-                'message': f'Failed to connect: {str(e)}'
+                'message': 'Failed to connect to appliance via HTTP'
             }
     
     def get_all_status(self):
